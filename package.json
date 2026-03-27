@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@xyflow/react": "^12.4.0",
+    "convex": "^1.34.1",
     "elkjs": "^0.9.3",
     "motion": "^12.0.0",
     "next": "^15.1.0",
