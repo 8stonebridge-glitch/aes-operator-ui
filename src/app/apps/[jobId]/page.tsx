@@ -172,7 +172,20 @@ export default function JobDetailPage() {
                   </span>
                 )}
               </div>
-              {status.targetPath && (
+              {status.previewUrl && (
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-[11px] text-[var(--text-muted)]">Preview:</span>
+                  <a
+                    href={status.previewUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded bg-green-50 px-2 py-0.5 font-mono text-[11px] text-green-600 underline hover:bg-green-100"
+                  >
+                    {status.previewUrl}
+                  </a>
+                </div>
+              )}
+              {status.targetPath && !status.previewUrl && (
                 <div className="mt-2 flex items-center gap-2">
                   <span className="text-[11px] text-[var(--text-muted)]">Output:</span>
                   <code className="rounded bg-[var(--bg-sidebar)] px-2 py-0.5 font-mono text-[11px] text-[var(--text-secondary)]">

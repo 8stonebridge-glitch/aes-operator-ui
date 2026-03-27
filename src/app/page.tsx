@@ -104,7 +104,7 @@ export default function Home() {
   const orchConnected = !!orchHealth;
 
   const handleSubmitIntent = useCallback(
-    async (intent: string, targetPath?: string) => {
+    async (intent: string, targetPath?: string, deployTarget?: "local" | "cloudflare") => {
       try {
         setBuildActive(true);
         setPipelineRunning(true);
@@ -113,7 +113,7 @@ export default function Home() {
 
         // Try LangGraph orchestrator first
         if (orchConnected) {
-          const result = await orchApi.startBuild(intent, targetPath);
+          const result = await orchApi.startBuild(intent, targetPath, deployTarget);
           setJobId(result.jobId);
           setPipelineMessage("Pipeline started — streaming events...");
           return;
@@ -388,7 +388,7 @@ function BuildsTab({
   needsApproval: boolean;
   approvalData: Record<string, unknown> | null;
   sseMessages: import("@/lib/hooks").SSEMessage[];
-  onSubmitIntent: (intent: string, targetPath?: string) => void;
+  onSubmitIntent: (intent: string, targetPath?: string, deployTarget?: "local" | "cloudflare") => void;
   onApprove: () => void;
   onConfirm: () => void;
 }) {
@@ -561,7 +561,21 @@ function BuildsTab({
             Gate: {jobStatus.currentGate}{jobStatus.appSpec.confidence != null && !isNaN(Number(jobStatus.appSpec.confidence)) ? ` · Confidence: ${Math.round(Number(jobStatus.appSpec.confidence) * 100)}%` : ""}
           </p>
         </div>
-        {jobStatus.targetPath && (
+        {jobStatus.previewUrl && (
+          <a
+            href={jobStatus.previewUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 rounded-lg border border-[var(--green)] bg-green-50 px-3 py-2 transition-colors hover:bg-green-100"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" className="shrink-0 text-green-600">
+              <path d="M5.5 9.5L2 6l1-1 2.5 2.5L11 2l1 1z" fill="currentColor" />
+            </svg>
+            <span className="text-[11px] font-medium text-green-700">Live preview:</span>
+            <code className="font-mono text-[11px] text-green-600 underline">{jobStatus.previewUrl}</code>
+          </a>
+        )}
+        {jobStatus.targetPath && !jobStatus.previewUrl && (
           <div className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-sidebar)] px-3 py-2">
             <svg width="14" height="14" viewBox="0 0 14 14" className="shrink-0 text-[var(--text-muted)]">
               <path d="M2 3.5A1.5 1.5 0 0 1 3.5 2H6l1 1.5h3.5A1.5 1.5 0 0 1 12 5v5.5A1.5 1.5 0 0 1 10.5 12h-7A1.5 1.5 0 0 1 2 10.5z" stroke="currentColor" strokeWidth="1" fill="none" />

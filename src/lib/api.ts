@@ -291,6 +291,8 @@ export interface OrchestratorJobStatus {
   intentConfirmed: boolean;
   userApproved: boolean;
   targetPath: string | null;
+  deployTarget: "local" | "cloudflare";
+  previewUrl: string | null;
   features: string[];
   featureBridges: Record<string, unknown>;
   appSpec: {
@@ -311,11 +313,11 @@ export interface OrchestratorSSEEvent {
 
 export const orchestrator = {
   /** Start a new build via the LangGraph orchestrator */
-  startBuild: async (intent: string, targetPath?: string): Promise<OrchestratorJobResponse> => {
+  startBuild: async (intent: string, targetPath?: string, deployTarget?: "local" | "cloudflare"): Promise<OrchestratorJobResponse> => {
     const res = await fetch(`${ORCH_BASE}${ORCH_PREFIX}/build`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ intent, targetPath: targetPath || undefined }),
+      body: JSON.stringify({ intent, targetPath: targetPath || undefined, deployTarget: deployTarget || "local" }),
     });
     if (!res.ok) {
       const text = await res.text().catch(() => "");
