@@ -275,6 +275,9 @@ export const api = {
 /* ── LangGraph Orchestrator API ── */
 
 const ORCH_BASE = process.env.NEXT_PUBLIC_AES_ORCHESTRATOR_URL ?? "";
+// In dev, Next.js rewrites /orchestrator/* → localhost:3100/api/*
+// In prod, ORCH_BASE points directly to the server, so use /api/* paths
+const ORCH_PREFIX = ORCH_BASE ? "/api" : "/orchestrator";
 
 export interface OrchestratorJobResponse {
   jobId: string;
@@ -309,7 +312,7 @@ export interface OrchestratorSSEEvent {
 export const orchestrator = {
   /** Start a new build via the LangGraph orchestrator */
   startBuild: async (intent: string, targetPath?: string): Promise<OrchestratorJobResponse> => {
-    const res = await fetch(`${ORCH_BASE}/orchestrator/build`, {
+    const res = await fetch(`${ORCH_BASE}${ORCH_PREFIX}/build`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ intent, targetPath: targetPath || undefined }),
@@ -323,14 +326,14 @@ export const orchestrator = {
 
   /** Get job status */
   jobStatus: async (jobId: string): Promise<OrchestratorJobStatus> => {
-    const res = await fetch(`${ORCH_BASE}/orchestrator/jobs/${jobId}`, { cache: "no-store" });
+    const res = await fetch(`${ORCH_BASE}${ORCH_PREFIX}/jobs/${jobId}`, { cache: "no-store" });
     if (!res.ok) throw new Error(`GET /orchestrator/jobs/${jobId} → ${res.status}`);
     return res.json();
   },
 
   /** List all jobs */
   listJobs: async () => {
-    const res = await fetch(`${ORCH_BASE}/orchestrator/jobs`, { cache: "no-store" });
+    const res = await fetch(`${ORCH_BASE}${ORCH_PREFIX}/jobs`, { cache: "no-store" });
     if (!res.ok) throw new Error(`GET /orchestrator/jobs → ${res.status}`);
     return res.json() as Promise<{
       jobId: string;
@@ -346,7 +349,7 @@ export const orchestrator = {
 
   /** Confirm intent (resolve ambiguity) */
   confirmIntent: async (jobId: string): Promise<void> => {
-    const res = await fetch(`${ORCH_BASE}/orchestrator/jobs/${jobId}/confirm`, {
+    const res = await fetch(`${ORCH_BASE}${ORCH_PREFIX}/jobs/${jobId}/confirm`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
     });
@@ -355,7 +358,7 @@ export const orchestrator = {
 
   /** Approve plan (human gate) */
   approvePlan: async (jobId: string): Promise<void> => {
-    const res = await fetch(`${ORCH_BASE}/orchestrator/jobs/${jobId}/approve`, {
+    const res = await fetch(`${ORCH_BASE}${ORCH_PREFIX}/jobs/${jobId}/approve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
     });
@@ -371,14 +374,14 @@ export const orchestrator = {
 
   /** Get job logs */
   jobLogs: async (jobId: string) => {
-    const res = await fetch(`${ORCH_BASE}/orchestrator/jobs/${jobId}/logs`, { cache: "no-store" });
+    const res = await fetch(`${ORCH_BASE}${ORCH_PREFIX}/jobs/${jobId}/logs`, { cache: "no-store" });
     if (!res.ok) throw new Error(`GET /orchestrator/jobs/${jobId}/logs → ${res.status}`);
     return res.json() as Promise<{ gate: string; message: string; timestamp: string }[]>;
   },
 
   /** Health check for orchestrator */
   health: async () => {
-    const res = await fetch(`${ORCH_BASE}/orchestrator/health`, { cache: "no-store" });
+    const res = await fetch(`${ORCH_BASE}${ORCH_PREFIX}/health`, { cache: "no-store" });
     if (!res.ok) throw new Error(`GET /orchestrator/health → ${res.status}`);
     return res.json() as Promise<{ status: string; version: string }>;
   },
