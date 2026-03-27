@@ -34,11 +34,11 @@ export function HealthIndicator({ health, error }: HealthIndicatorProps) {
         className={`h-2 w-2 rounded-full ${isOk ? "bg-[var(--green)]" : "bg-[var(--amber)]"}`}
       />
       <span className="text-[var(--text-muted)]">
-        {health.total_records !== null
-          ? `${health.total_records.toLocaleString()} records`
+        {health.total_records != null
+          ? `${Number(health.total_records).toLocaleString()} records`
           : health.status}
       </span>
-      {health.pending_escalations > 0 && (
+      {(health.pending_escalations ?? 0) > 0 && (
         <span className="rounded-full bg-[var(--amber-soft)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--amber)]">
           {health.pending_escalations} pending
         </span>

@@ -181,7 +181,7 @@ export default function AppsPage() {
                       {job.features} feature{job.features !== 1 ? "s" : ""}
                     </p>
                     <p className="mt-0.5 text-[10px] text-[var(--text-muted)]">
-                      {new Date(job.createdAt).toLocaleString()}
+                      {job.createdAt ? new Date(job.createdAt).toLocaleString() : ""}
                     </p>
                   </div>
                 </div>
