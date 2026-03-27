@@ -4,7 +4,7 @@ import { useState } from "react";
 
 
 interface IntentInputProps {
-  onSubmit: (intent: string, targetPath?: string, deployTarget?: "local" | "cloudflare") => void;
+  onSubmit: (intent: string, targetPath?: string, deployTarget?: "local" | "cloudflare", designMode?: "auto" | "paper") => void;
   disabled?: boolean;
 }
 
@@ -12,12 +12,13 @@ export function IntentInput({ onSubmit, disabled }: IntentInputProps) {
   const [text, setText] = useState("");
   const [targetPath, setTargetPath] = useState("");
   const [deployTarget, setDeployTarget] = useState<"local" | "cloudflare">("local");
+  const [designMode, setDesignMode] = useState<"auto" | "paper">("auto");
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const handleSubmit = () => {
     const trimmed = text.trim();
     if (!trimmed || disabled) return;
-    onSubmit(trimmed, targetPath.trim() || undefined, deployTarget);
+    onSubmit(trimmed, targetPath.trim() || undefined, deployTarget, designMode);
   };
 
   return (
@@ -44,32 +45,62 @@ export function IntentInput({ onSubmit, disabled }: IntentInputProps) {
           className="w-full resize-none rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-5 py-4 text-sm leading-relaxed text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition-all focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] disabled:opacity-50"
         />
 
-        {/* Deploy target toggle */}
-        <div className="flex items-center gap-3">
-          <span className="text-[11px] font-medium text-[var(--text-muted)]">Deploy to:</span>
-          <div className="flex rounded-lg border border-[var(--border)] overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setDeployTarget("local")}
-              className={`px-3 py-1.5 text-[11px] font-medium transition-colors ${
-                deployTarget === "local"
-                  ? "bg-[var(--text-primary)] text-white"
-                  : "bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-              }`}
-            >
-              Local files
-            </button>
-            <button
-              type="button"
-              onClick={() => setDeployTarget("cloudflare")}
-              className={`px-3 py-1.5 text-[11px] font-medium transition-colors ${
-                deployTarget === "cloudflare"
-                  ? "bg-[var(--text-primary)] text-white"
-                  : "bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-              }`}
-            >
-              Cloudflare
-            </button>
+        {/* Deploy target + Design mode toggles */}
+        <div className="flex items-center gap-6 flex-wrap">
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] font-medium text-[var(--text-muted)]">Deploy to:</span>
+            <div className="flex rounded-lg border border-[var(--border)] overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setDeployTarget("local")}
+                className={`px-3 py-1.5 text-[11px] font-medium transition-colors ${
+                  deployTarget === "local"
+                    ? "bg-[var(--text-primary)] text-white"
+                    : "bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                }`}
+              >
+                Local files
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeployTarget("cloudflare")}
+                className={`px-3 py-1.5 text-[11px] font-medium transition-colors ${
+                  deployTarget === "cloudflare"
+                    ? "bg-[var(--text-primary)] text-white"
+                    : "bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                }`}
+              >
+                Cloudflare
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] font-medium text-[var(--text-muted)]">Design:</span>
+            <div className="flex rounded-lg border border-[var(--border)] overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setDesignMode("auto")}
+                className={`px-3 py-1.5 text-[11px] font-medium transition-colors ${
+                  designMode === "auto"
+                    ? "bg-[var(--text-primary)] text-white"
+                    : "bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                }`}
+              >
+                Auto
+              </button>
+              <button
+                type="button"
+                onClick={() => setDesignMode("paper")}
+                className={`px-3 py-1.5 text-[11px] font-medium transition-colors ${
+                  designMode === "paper"
+                    ? "bg-[var(--text-primary)] text-white"
+                    : "bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                }`}
+              >
+                Paper
+              </button>
+            </div>
           </div>
         </div>
 

@@ -104,7 +104,7 @@ export default function Home() {
   const orchConnected = !!orchHealth;
 
   const handleSubmitIntent = useCallback(
-    async (intent: string, targetPath?: string, deployTarget?: "local" | "cloudflare") => {
+    async (intent: string, targetPath?: string, deployTarget?: "local" | "cloudflare", designMode?: "auto" | "paper") => {
       try {
         setBuildActive(true);
         setPipelineRunning(true);
@@ -113,7 +113,7 @@ export default function Home() {
 
         // Try LangGraph orchestrator first
         if (orchConnected) {
-          const result = await orchApi.startBuild(intent, targetPath, deployTarget);
+          const result = await orchApi.startBuild(intent, targetPath, deployTarget, designMode);
           setJobId(result.jobId);
           setPipelineMessage("Pipeline started — streaming events...");
           return;
@@ -388,7 +388,7 @@ function BuildsTab({
   needsApproval: boolean;
   approvalData: Record<string, unknown> | null;
   sseMessages: import("@/lib/hooks").SSEMessage[];
-  onSubmitIntent: (intent: string, targetPath?: string, deployTarget?: "local" | "cloudflare") => void;
+  onSubmitIntent: (intent: string, targetPath?: string, deployTarget?: "local" | "cloudflare", designMode?: "auto" | "paper") => void;
   onApprove: () => void;
   onConfirm: () => void;
 }) {

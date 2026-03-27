@@ -313,11 +313,11 @@ export interface OrchestratorSSEEvent {
 
 export const orchestrator = {
   /** Start a new build via the LangGraph orchestrator */
-  startBuild: async (intent: string, targetPath?: string, deployTarget?: "local" | "cloudflare"): Promise<OrchestratorJobResponse> => {
+  startBuild: async (intent: string, targetPath?: string, deployTarget?: "local" | "cloudflare", designMode?: "auto" | "paper"): Promise<OrchestratorJobResponse> => {
     const res = await fetch(`${ORCH_BASE}${ORCH_PREFIX}/build`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ intent, targetPath: targetPath || undefined, deployTarget: deployTarget || "local" }),
+      body: JSON.stringify({ intent, targetPath: targetPath || undefined, deployTarget: deployTarget || "local", designMode: designMode || "auto" }),
     });
     if (!res.ok) {
       const text = await res.text().catch(() => "");
