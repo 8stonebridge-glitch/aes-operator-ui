@@ -158,8 +158,16 @@ export interface ServicesResponse {
 
 export const api = {
   health: () => aesGet<HealthResponse>("/api/health"),
-  servicesStatus: () => aesGet<ServicesResponse>("/api/services/status"),
-  loadServices: () => aesPost<ServicesResponse>("/api/services/load"),
+  servicesStatus: async (): Promise<ServicesResponse> => {
+    const res = await fetch("/api/services/status", { cache: "no-store" });
+    if (!res.ok) throw new Error(`GET /api/services/status → ${res.status}`);
+    return res.json();
+  },
+  loadServices: async (): Promise<ServicesResponse> => {
+    const res = await fetch("/api/services/load", { method: "POST" });
+    if (!res.ok) throw new Error(`POST /api/services/load → ${res.status}`);
+    return res.json();
+  },
 
   // Orchestrator
   orchestratorLive: () => aesGet<OrchestratorSnapshot>("/api/orchestrator/live"),
