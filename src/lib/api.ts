@@ -145,8 +145,20 @@ export interface BuildReplay {
   validation?: unknown;
 }
 
+export interface ServiceStatus {
+  id: string;
+  name: string;
+  up: boolean;
+  error?: string;
+}
+
+export interface ServicesResponse {
+  services: ServiceStatus[];
+}
+
 export const api = {
   health: () => aesGet<HealthResponse>("/api/health"),
+  servicesStatus: () => aesGet<ServicesResponse>("/api/services/status"),
 
   // Orchestrator
   orchestratorLive: () => aesGet<OrchestratorSnapshot>("/api/orchestrator/live"),

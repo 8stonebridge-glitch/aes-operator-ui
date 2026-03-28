@@ -16,6 +16,7 @@ import Link from "next/link";
 import { ThinkingLine } from "@/components/thinking-line";
 import { HealthIndicator } from "@/components/health-indicator";
 import { IntentInput } from "@/components/intent-input";
+import { ServiceStatusBar } from "@/components/service-status-bar";
 import { PipelineView } from "@/components/pipeline-view";
 import { DependencyGraph } from "@/components/dependency-graph";
 import { ActivityTimeline } from "@/components/activity-timeline";
@@ -394,7 +395,8 @@ function BuildsTab({
 }) {
   if (!buildActive) {
     return (
-      <div className="flex h-full items-center justify-center">
+      <div className="flex h-full flex-col items-center justify-center">
+        <ServiceStatusBar />
         <IntentInput
           onSubmit={onSubmitIntent}
           disabled={!isConnected}
