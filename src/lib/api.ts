@@ -159,6 +159,7 @@ export interface ServicesResponse {
 export const api = {
   health: () => aesGet<HealthResponse>("/api/health"),
   servicesStatus: () => aesGet<ServicesResponse>("/api/services/status"),
+  loadServices: () => aesPost<ServicesResponse>("/api/services/load"),
 
   // Orchestrator
   orchestratorLive: () => aesGet<OrchestratorSnapshot>("/api/orchestrator/live"),
