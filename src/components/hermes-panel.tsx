@@ -110,8 +110,8 @@ export function HermesPanel() {
             <>
               {/* Stats row */}
               <div className="grid grid-cols-3 gap-3">
-                <StatCard label="Issues" value={dashboard.stats.issues} color="red" />
-                <StatCard label="Resolutions" value={dashboard.stats.resolutions} color="green" />
+                <StatCard label="Unresolved" value={dashboard.unresolved?.length ?? 0} color={dashboard.unresolved?.length ? "red" : "green"} />
+                <StatCard label="Resolved" value={dashboard.stats.resolutions} color="green" />
                 <StatCard label="Playbooks" value={dashboard.stats.playbooks} color="blue" />
               </div>
 
