@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useHermesDashboard } from "@/lib/hooks";
 import { hermes } from "@/lib/api";
-import type { HermesPatrolStatus } from "@/lib/api";
+import type { HermesPatrolStatus, HermesSuggestion } from "@/lib/api";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -19,13 +19,30 @@ export function HermesPanel() {
   const [view, setView] = useState<"dashboard" | "chat">("dashboard");
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [patrol, setPatrol] = useState<HermesPatrolStatus | null>(null);
+  const [suggestions, setSuggestions] = useState<HermesSuggestion[]>([]);
+  const [pipelineStats, setPipelineStats] = useState<{ total_runs: number; successes: number; failures: number; success_rate: string } | null>(null);
 
-  // Poll patrol status
+  // Poll patrol status + suggestions
   useEffect(() => {
     const fetchPatrol = () => hermes.patrol().then(setPatrol).catch(() => {});
+    const fetchSuggestions = () =>
+      hermes.suggestions()
+        .then((data) => {
+          setSuggestions(data.suggestions || []);
+          setPipelineStats(data.behavioral_stats || null);
+        })
+        .catch(() => {});
     fetchPatrol();
-    const interval = setInterval(fetchPatrol, 10000);
+    fetchSuggestions();
+    const interval = setInterval(() => { fetchPatrol(); fetchSuggestions(); }, 10000);
     return () => clearInterval(interval);
+  }, []);
+
+  const dismissSuggestion = useCallback(async (id: string) => {
+    try {
+      await hermes.dismissSuggestion(id);
+      setSuggestions((prev) => prev.filter((s) => s.id !== id));
+    } catch {}
   }, []);
 
   useEffect(() => {
@@ -181,6 +198,62 @@ export function HermesPanel() {
                   {patrol.lastError && (
                     <p className="mt-2 text-[10px] text-red-500 truncate">{patrol.lastError}</p>
                   )}
+                </div>
+              )}
+
+              {/* Suggestions — self-audit + behavioral patterns */}
+              {suggestions.length > 0 && (
+                <Section title={`Suggestions (${suggestions.length})`}>
+                  {suggestions.map((s) => (
+                    <div key={s.id} className="py-2.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-2 min-w-0 flex-1">
+                          <span className={`mt-0.5 shrink-0 h-2 w-2 rounded-full ${
+                            s.severity === "critical" ? "bg-red-500" :
+                            s.severity === "high" ? "bg-amber-500" :
+                            "bg-blue-400"
+                          }`} />
+                          <div className="min-w-0">
+                            <p className="text-[12px] font-medium text-[var(--text-primary)]">{s.title}</p>
+                            <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--text-muted)]">{s.detail}</p>
+                            {s.evidence && (
+                              <p className="mt-1 text-[10px] text-[var(--text-muted)] opacity-60">{s.evidence}</p>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => dismissSuggestion(s.id)}
+                          className="shrink-0 rounded px-1.5 py-0.5 text-[9px] text-[var(--text-muted)] hover:bg-[var(--bg-sidebar)] transition-colors"
+                          title="Dismiss"
+                        >
+                          dismiss
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </Section>
+              )}
+
+              {/* Pipeline Stats */}
+              {pipelineStats && pipelineStats.total_runs > 0 && (
+                <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] p-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">Pipeline Health</p>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div>
+                      <p className="text-[16px] font-semibold text-[var(--text-primary)]">{pipelineStats.total_runs}</p>
+                      <p className="text-[9px] text-[var(--text-muted)]">Runs</p>
+                    </div>
+                    <div>
+                      <p className={`text-[16px] font-semibold ${
+                        pipelineStats.failures > pipelineStats.successes ? "text-red-600" : "text-green-600"
+                      }`}>{pipelineStats.success_rate}</p>
+                      <p className="text-[9px] text-[var(--text-muted)]">Success</p>
+                    </div>
+                    <div>
+                      <p className="text-[16px] font-semibold text-red-600">{pipelineStats.failures}</p>
+                      <p className="text-[9px] text-[var(--text-muted)]">Failures</p>
+                    </div>
+                  </div>
                 </div>
               )}
 

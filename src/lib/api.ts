@@ -444,6 +444,26 @@ export interface HermesPatrolStatus {
   reason?: string;
 }
 
+export interface HermesSuggestion {
+  id: string;
+  severity: string;
+  title: string;
+  detail: string;
+  evidence?: string;
+  source?: string;
+  created_at?: string;
+}
+
+export interface HermesSuggestions {
+  suggestions: HermesSuggestion[];
+  behavioral_stats: {
+    total_runs: number;
+    successes: number;
+    failures: number;
+    success_rate: string;
+  } | null;
+}
+
 export const hermes = {
   dashboard: async (): Promise<HermesDashboard> => {
     const res = await fetch(`${HERMES_BASE}/dashboard`, { cache: "no-store" });
@@ -492,6 +512,15 @@ export const hermes = {
     const res = await fetch(`${HERMES_BASE}/patrol/stop`, { method: "POST" });
     if (!res.ok) throw new Error(`Hermes patrol stop → ${res.status}`);
     return res.json();
+  },
+  suggestions: async (): Promise<HermesSuggestions> => {
+    const res = await fetch(`${HERMES_BASE}/suggestions`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Hermes suggestions → ${res.status}`);
+    return res.json();
+  },
+  dismissSuggestion: async (id: string): Promise<void> => {
+    const res = await fetch(`${HERMES_BASE}/suggestions/${encodeURIComponent(id)}/dismiss`, { method: "POST" });
+    if (!res.ok) throw new Error(`Hermes dismiss → ${res.status}`);
   },
 };
 
