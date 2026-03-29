@@ -410,6 +410,90 @@ export const orchestrator = {
   },
 };
 
+/* ── Hermes API ── */
+
+const HERMES_BASE = process.env.NEXT_PUBLIC_HERMES_URL ?? "https://hermes-production-03ad.up.railway.app";
+
+export interface HermesDashboard {
+  stats: { issues: number; resolutions: number; playbooks: number };
+  top_issues: { id: string; error_signature: string; occurrence_count: number; severity: string; status: string; environment: string; last_seen_at: string }[];
+  unresolved: { id: string; error_signature: string; occurrence_count: number; status: string; environment: string }[];
+  playbooks: { id: string; error_pattern: string; promotion_status: string; success_rate: number; applied_count: number; environments: string[] }[];
+  service_failures: { service: string; count: number }[];
+  pending_observations: { id: string; raw_message: string; source: string; timestamp: string; status: string }[];
+  recent_resolutions: { issueId: string; method: string; fixApplied: string; resolvedAt: string }[];
+}
+
+export interface HermesChatResponse {
+  reply: string;
+  lookupCount: number;
+}
+
+export interface HermesPatrolStatus {
+  enabled: boolean;
+  status?: string;
+  lastPollAt?: string;
+  issuesDetected?: number;
+  issuesResolved?: number;
+  escalations?: number;
+  playbooksGenerated?: number;
+  lastError?: string | null;
+  uptime?: number;
+  startedAt?: string;
+  reason?: string;
+}
+
+export const hermes = {
+  dashboard: async (): Promise<HermesDashboard> => {
+    const res = await fetch(`${HERMES_BASE}/dashboard`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Hermes dashboard → ${res.status}`);
+    return res.json();
+  },
+  stats: async () => {
+    const res = await fetch(`${HERMES_BASE}/stats`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Hermes stats → ${res.status}`);
+    return res.json() as Promise<{ issues: number; resolutions: number; playbooks: number }>;
+  },
+  chat: async (message: string, sessionId = "operator-ui"): Promise<HermesChatResponse> => {
+    const res = await fetch(`${HERMES_BASE}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, session_id: sessionId }),
+    });
+    if (!res.ok) throw new Error(`Hermes chat → ${res.status}`);
+    return res.json();
+  },
+  topIssues: async (limit = 10) => {
+    const res = await fetch(`${HERMES_BASE}/issues/top?limit=${limit}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Hermes issues → ${res.status}`);
+    return res.json();
+  },
+  playbookLeaderboard: async (limit = 10) => {
+    const res = await fetch(`${HERMES_BASE}/playbooks/top?limit=${limit}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Hermes playbooks → ${res.status}`);
+    return res.json();
+  },
+  patrol: async (): Promise<HermesPatrolStatus> => {
+    const res = await fetch(`${HERMES_BASE}/patrol/status`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Hermes patrol → ${res.status}`);
+    return res.json();
+  },
+  patrolStart: async (orchestratorUrl?: string): Promise<HermesPatrolStatus> => {
+    const res = await fetch(`${HERMES_BASE}/patrol/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(orchestratorUrl ? { orchestratorUrl } : {}),
+    });
+    if (!res.ok) throw new Error(`Hermes patrol start → ${res.status}`);
+    return res.json();
+  },
+  patrolStop: async () => {
+    const res = await fetch(`${HERMES_BASE}/patrol/stop`, { method: "POST" });
+    if (!res.ok) throw new Error(`Hermes patrol stop → ${res.status}`);
+    return res.json();
+  },
+};
+
 export interface AttentionQueue {
   pending_escalations: AttentionItem[];
   blocked_builds: AttentionItem[];
