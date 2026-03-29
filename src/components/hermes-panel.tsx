@@ -109,10 +109,31 @@ export function HermesPanel() {
           ) : (
             <>
               {/* Stats row */}
-              <div className="grid grid-cols-3 gap-3">
-                <StatCard label="Unresolved" value={dashboard.unresolved?.length ?? 0} color={dashboard.unresolved?.length ? "red" : "green"} />
-                <StatCard label="Resolved" value={dashboard.stats.resolutions} color="green" />
-                <StatCard label="Playbooks" value={dashboard.stats.playbooks} color="blue" />
+              <div className="grid grid-cols-4 gap-3">
+                <StatCard
+                  label="Active"
+                  value={dashboard.unresolved?.length ?? 0}
+                  color={(dashboard.unresolved?.length ?? 0) > 0 ? "red" : "green"}
+                  sub={(dashboard.unresolved?.length ?? 0) > 0 ? "need attention" : "all clear"}
+                />
+                <StatCard
+                  label="Total"
+                  value={dashboard.stats.issues}
+                  color="gray"
+                  sub="all time"
+                />
+                <StatCard
+                  label="Resolved"
+                  value={dashboard.stats.resolutions}
+                  color="green"
+                  sub={dashboard.stats.issues > 0 ? `${Math.round((dashboard.stats.resolutions / dashboard.stats.issues) * 100)}% rate` : "—"}
+                />
+                <StatCard
+                  label="Playbooks"
+                  value={dashboard.stats.playbooks}
+                  color="blue"
+                  sub="learned fixes"
+                />
               </div>
 
               {/* Patrol Status */}
@@ -335,16 +356,19 @@ export function HermesPanel() {
   );
 }
 
-function StatCard({ label, value, color }: { label: string; value: number; color: "red" | "green" | "blue" }) {
+function StatCard({ label, value, color, sub }: { label: string; value: number; color: "red" | "green" | "blue" | "amber" | "gray"; sub?: string }) {
   const colorMap = {
     red: "bg-red-50 text-red-700 border-red-100",
     green: "bg-green-50 text-green-700 border-green-100",
     blue: "bg-blue-50 text-blue-700 border-blue-100",
+    amber: "bg-amber-50 text-amber-700 border-amber-100",
+    gray: "bg-gray-50 text-gray-600 border-gray-100",
   };
   return (
     <div className={`rounded-lg border px-3 py-2.5 ${colorMap[color]}`}>
       <p className="text-[20px] font-semibold">{value}</p>
       <p className="text-[10px] opacity-70">{label}</p>
+      {sub && <p className="text-[9px] opacity-50 mt-0.5">{sub}</p>}
     </div>
   );
 }
