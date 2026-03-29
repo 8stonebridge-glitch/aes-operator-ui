@@ -21,8 +21,9 @@ import { PipelineView } from "@/components/pipeline-view";
 import { DependencyGraph } from "@/components/dependency-graph";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { KnowledgeGraph } from "@/components/knowledge-graph";
+import { HermesPanel } from "@/components/hermes-panel";
 
-type Tab = "builds" | "graph" | "history";
+type Tab = "builds" | "graph" | "history" | "hermes";
 
 export default function Home() {
   const [tab, setTab] = useState<Tab>("builds");
@@ -36,6 +37,8 @@ export default function Home() {
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
   const [needsApproval, setNeedsApproval] = useState(false);
   const [approvalData, setApprovalData] = useState<Record<string, unknown> | null>(null);
+  const [clarificationQuestions, setClarificationQuestions] = useState<string[]>([]);
+  const [clarificationInput, setClarificationInput] = useState("");
 
   const { data: health, error: healthError } = useHealth();
   const { data: orchHealth } = useOrchestratorHealth();
@@ -83,6 +86,8 @@ export default function Home() {
       setPipelineMessage(`⚠ ${data.message ?? "Failed"}`);
     } else if (event === "needs_confirmation") {
       setNeedsConfirmation(true);
+      const questions = Array.isArray(data.questions) ? data.questions as string[] : [];
+      setClarificationQuestions(questions);
       setPipelineMessage(String(data.statement ?? "Confirm intent?"));
     } else if (event === "needs_approval") {
       setNeedsApproval(true);
@@ -145,13 +150,15 @@ export default function Home() {
   const handleConfirm = useCallback(async () => {
     if (!jobId) return;
     try {
-      await orchApi.confirmIntent(jobId);
+      await orchApi.confirmIntent(jobId, clarificationInput || undefined);
       setNeedsConfirmation(false);
-      setPipelineMessage("Intent confirmed — continuing...");
+      setClarificationQuestions([]);
+      setClarificationInput("");
+      setPipelineMessage(clarificationInput ? "Clarification sent — continuing..." : "Intent confirmed — continuing...");
     } catch (err) {
       console.error("Failed to confirm:", err);
     }
-  }, [jobId]);
+  }, [jobId, clarificationInput]);
 
   const handleApprove = useCallback(async () => {
     if (jobId) {
@@ -192,6 +199,7 @@ export default function Home() {
                 { id: "builds" as Tab, label: "Builds" },
                 { id: "graph" as Tab, label: "Graph" },
                 { id: "history" as Tab, label: "History" },
+                { id: "hermes" as Tab, label: "Hermes" },
               ] as const
             ).map((item) => (
               <button
@@ -274,6 +282,9 @@ export default function Home() {
                 needsApproval={needsApproval}
                 approvalData={approvalData}
                 sseMessages={sseMessages}
+                clarificationQuestions={clarificationQuestions}
+                clarificationInput={clarificationInput}
+                onClarificationChange={setClarificationInput}
                 onSubmitIntent={handleSubmitIntent}
                 onApprove={handleApprove}
                 onConfirm={handleConfirm}
@@ -283,6 +294,8 @@ export default function Home() {
             {tab === "graph" && <KnowledgeGraph />}
 
             {tab === "history" && <HistoryTab />}
+
+            {tab === "hermes" && <HermesPanel />}
           </div>
 
           {/* Activity sidebar (only when build is active) */}
@@ -372,6 +385,9 @@ function BuildsTab({
   needsApproval,
   approvalData,
   sseMessages,
+  clarificationQuestions,
+  clarificationInput,
+  onClarificationChange,
   onSubmitIntent,
   onApprove,
   onConfirm,
@@ -389,6 +405,9 @@ function BuildsTab({
   needsApproval: boolean;
   approvalData: Record<string, unknown> | null;
   sseMessages: import("@/lib/hooks").SSEMessage[];
+  clarificationQuestions: string[];
+  clarificationInput: string;
+  onClarificationChange: (value: string) => void;
   onSubmitIntent: (intent: string, targetPath?: string, deployTarget?: "local" | "cloudflare", designMode?: "auto" | "paper") => void;
   onApprove: () => void;
   onConfirm: () => void;
@@ -405,30 +424,72 @@ function BuildsTab({
     );
   }
 
-  // Human gate: needs confirmation
+  // Human gate: needs confirmation / clarification
   if (needsConfirmation) {
+    const hasQuestions = clarificationQuestions.length > 0;
     return (
       <div className="flex h-full flex-col items-center justify-center gap-6">
         <PipelineStageRail currentStage={pipelineStage} />
-        <div className="max-w-md space-y-4 text-center">
-          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
-            <span className="text-lg">🤔</span>
+        <div className="max-w-lg w-full space-y-4">
+          <div className="text-center">
+            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
+              <span className="text-lg">{hasQuestions ? "💬" : "🤔"}</span>
+            </div>
+            <h2 className="mt-3 text-lg font-semibold text-[var(--text-primary)]">
+              {hasQuestions ? "Tell me more about your project" : "Confirm Intent"}
+            </h2>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+              {hasQuestions
+                ? "AES needs a few details to build the right thing."
+                : "The system classified your intent and needs confirmation before proceeding."}
+            </p>
           </div>
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">
-            Confirm Intent
-          </h2>
-          <p className="text-sm text-[var(--text-secondary)]">
-            The system classified your intent and needs confirmation before proceeding.
-          </p>
-          {jobId && (
-            <p className="text-xs font-mono text-[var(--text-muted)]">Job: {jobId}</p>
+
+          {hasQuestions && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 space-y-2">
+              {clarificationQuestions.map((q, i) => (
+                <p key={i} className="text-sm text-amber-900 flex gap-2">
+                  <span className="shrink-0 font-medium">{i + 1}.</span>
+                  <span>{q}</span>
+                </p>
+              ))}
+            </div>
           )}
-          <button
-            onClick={onConfirm}
-            className="rounded-lg bg-[var(--text-primary)] px-6 py-2.5 text-sm font-medium text-white transition-all hover:opacity-90"
-          >
-            Confirm & Continue
-          </button>
+
+          {hasQuestions && (
+            <textarea
+              value={clarificationInput}
+              onChange={(e) => onClarificationChange(e.target.value)}
+              placeholder="Type your answers here... e.g. 'It's a 1-on-1 chat app for consumers, the core flow is send/receive messages with real-time updates'"
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              rows={4}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && clarificationInput.trim()) {
+                  onConfirm();
+                }
+              }}
+            />
+          )}
+
+          {jobId && (
+            <p className="text-center text-xs font-mono text-[var(--text-muted)]">Job: {jobId}</p>
+          )}
+
+          <div className="flex justify-center gap-3">
+            <button
+              onClick={onConfirm}
+              disabled={hasQuestions && !clarificationInput.trim()}
+              className="rounded-lg bg-[var(--text-primary)] px-6 py-2.5 text-sm font-medium text-white transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {hasQuestions ? "Send & Continue" : "Confirm & Continue"}
+            </button>
+          </div>
+          {hasQuestions && (
+            <p className="text-center text-xs text-[var(--text-muted)]">
+              Press Cmd+Enter to send
+            </p>
+          )}
         </div>
       </div>
     );
@@ -654,6 +715,13 @@ function NavIcon({ id, active }: { id: string; active: boolean }) {
     return (
       <svg width="14" height="14" viewBox="0 0 14 14" className="shrink-0">
         <circle cx="7" cy="7" r="3" stroke={active ? "#1C1917" : "#A8A29E"} strokeWidth="1.5" fill="none" />
+      </svg>
+    );
+  }
+  if (id === "hermes") {
+    return (
+      <svg width="14" height="14" viewBox="0 0 14 14" className="shrink-0">
+        <path d="M7 2L3 5v4l4 3 4-3V5z" stroke={active ? "#D97706" : "#A8A29E"} strokeWidth="1.5" fill={active ? "#FEF3C7" : "none"} strokeLinejoin="round" />
       </svg>
     );
   }

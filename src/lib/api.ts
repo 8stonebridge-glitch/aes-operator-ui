@@ -370,11 +370,12 @@ export const orchestrator = {
     }[]>;
   },
 
-  /** Confirm intent (resolve ambiguity) */
-  confirmIntent: async (jobId: string): Promise<void> => {
+  /** Confirm intent (resolve ambiguity). Optionally send clarification answers. */
+  confirmIntent: async (jobId: string, clarification?: string): Promise<void> => {
     const res = await fetch(`${ORCH_BASE}${ORCH_PREFIX}/jobs/${jobId}/confirm`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ clarification: clarification || undefined }),
     });
     if (!res.ok) throw new Error(`POST confirm → ${res.status}`);
   },
